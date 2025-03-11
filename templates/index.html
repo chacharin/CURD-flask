@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <title>Simple CRUD App with SQLAlchemy ORM</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+  <h1>รายการ Items</h1>
+
+  <!-- ฟอร์มสำหรับเพิ่ม Item ใหม่ -->
+  <h2>เพิ่ม Item ใหม่</h2>
+  <form action="{{ url_for('create') }}" method="post">
+    <input type="text" name="name" placeholder="ชื่อ Item" required>
+    <input type="text" name="description" placeholder="รายละเอียด">
+    <button type="submit">เพิ่ม</button>
+  </form>
+
+  <!-- แสดงรายการ Items -->
+  <h2>รายการ Items</h2>
+  <ul id="item-list">
+    {% for item in items %}
+      <li id="item-{{ item.id }}">
+        <strong>{{ item.name }}</strong>: {{ item.description }}
+        <!-- ปุ่มลบ ใช้ JavaScript จัดการลบข้อมูล -->
+        <button class="delete-btn" data-id="{{ item.id }}">ลบ</button>
+        <!-- ฟอร์มแก้ไขข้อมูล (ส่งแบบ POST ปกติ) พร้อม class สำหรับยืนยันรหัส -->
+        <form action="{{ url_for('update', item_id=item.id) }}" method="post" style="display:inline;" class="update-form">
+          <input type="text" name="name" placeholder="ชื่อใหม่" required>
+          <input type="text" name="description" placeholder="รายละเอียดใหม่">
+          <button type="submit">แก้ไข</button>
+        </form>
+      </li>
+    {% endfor %}
+  </ul>
+
+  <!-- ช่องสำหรับแสดงข้อความแจ้งเตือน -->
+  <div id="notification"></div>
+
+  <!-- โหลดไฟล์ JavaScript จากโฟลเดอร์ static -->
+  <script src="{{ url_for('static', filename='main.js') }}"></script>
+</body>
+</html>
