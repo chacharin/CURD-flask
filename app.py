@@ -3,10 +3,9 @@ from flask_sqlalchemy import SQLAlchemy
 import os
 
 app = Flask(__name__)
-# กำหนดค่า database URI โดยอ่านจาก environment variable "DATABASE_URL"
-# ถ้าไม่มีค่าใน environment จะใช้ SQLite เป็น fallback (สำหรับ development)
 app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get("DATABASE_URL", "sqlite:///database.db")
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+app.config['JSON_SORT_KEYS'] = False  # Preserve key order in JSON
 
 db = SQLAlchemy(app)
 
@@ -18,7 +17,6 @@ class Item(db.Model):
     def __repr__(self):
         return f"<Item {self.name}>"
 
-# สร้างตารางในฐานข้อมูลเมื่อโปรแกรมเริ่มต้น
 with app.app_context():
     db.create_all()
 
@@ -31,10 +29,22 @@ def index():
 def create():
     name = request.form.get('name')
     description = request.form.get('description')
+    
+    if not name or not description:
+        return jsonify({"error": "Name and description are required"}), 400
+    
     new_item = Item(name=name, description=description)
     db.session.add(new_item)
     db.session.commit()
-    return redirect(url_for('index'))
+    
+    # Check if the request is from an API client (e.g., Streamlit) or a browser
+    if request.headers.get('X-Requested-With') == 'XMLHttpRequest' or request.content_type == 'application/x-www-form-urlencoded':
+        return jsonify({
+            "message": "Item added successfully",
+            "item": {"id": new_item.id, "name": new_item.name, "description": new_item.description}
+        }), 201
+    else:
+        return redirect(url_for('index'))
 
 @app.route('/update/<int:item_id>', methods=['POST'])
 def update(item_id):
@@ -53,6 +63,13 @@ def delete(item_id):
         return jsonify({'success': True})
     else:
         return redirect(url_for('index'))
+
+@app.route('/api/items', methods=['GET'])
+def get_items_api():
+    items = Item.query.all()
+    items_list = [{"id": item.id, "name": item.name, "description": item.description} 
+                  for item in items]
+    return jsonify(items_list)
 
 if __name__ == '__main__':
     app.run(debug=True)
