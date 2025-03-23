@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Items List</title>
+    <style>
+        table {
+            width: 80%;
+            margin: 20px auto;
+            border-collapse: collapse;
+        }
+        th, td {
+            padding: 12px;
+            text-align: left;
+            border: 1px solid #ddd;
+        }
+        th {
+            background-color: #f2f2f2;
+        }
+        tr:hover {
+            background-color: #f5f5f5;
+        }
+        .error {
+            color: red;
+            text-align: center;
+            margin: 20px;
+        }
+    </style>
+</head>
+<body>
+    <table id="itemsTable">
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Name</th>
+                <th>Description</th>
+            </tr>
+        </thead>
+        <tbody id="tableBody">
+            <!-- Data will be inserted here -->
+        </tbody>
+    </table>
+
+    <div id="errorMessage" class="error"></div>
+
+    <script>
+        async function fetchItems() {
+            const apiUrl = 'http://127.0.0.1:5000/api/items';
+            const errorMessage = document.getElementById('errorMessage');
+            const tableBody = document.getElementById('tableBody');
+
+            try {
+                // Clear previous error
+                errorMessage.textContent = 'Loading data...';
+
+                // Attempt to fetch data
+                const response = await fetch(apiUrl, {
+                    method: 'GET',
+                    headers: {
+                        'Accept': 'application/json',
+                    }
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP error! Status: ${response.status}`);
+                }
+
+                const items = await response.json();
+                
+                // Clear loading message and previous content
+                errorMessage.textContent = '';
+                tableBody.innerHTML = '';
+
+                // Populate table
+                items.forEach(item => {
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                        <td>${item.id || 'N/A'}</td>
+                        <td>${item.name || 'N/A'}</td>
+                        <td>${item.description || 'N/A'}</td>
+                    `;
+                    tableBody.appendChild(row);
+                });
+
+            } catch (error) {
+                let errorText = 'Failed to load data. ';
+                
+                if (error.message.includes('Failed to fetch')) {
+                    errorText += 'Check if the server is running at ' + apiUrl + 
+                               ' and CORS is properly configured.';
+                } else {
+                    errorText += error.message;
+                }
+                
+                errorMessage.textContent = errorText;
+                console.error('Fetch error:', error);
+            }
+        }
+
+        // Call the function when the page loads
+        window.onload = fetchItems;
+    </script>
+</body>
+</html>
